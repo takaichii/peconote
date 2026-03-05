@@ -2,6 +2,7 @@ package router
 
 import (
 	"encoding/json"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 	"gorm.io/gorm"
@@ -15,6 +16,11 @@ import (
 
 func NewRouter(gormDB *gorm.DB, sqlxDB *sqlx.DB) *gin.Engine {
 	r := gin.New()
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Content-Type"},
+	}))
 	r.Use(gin.Recovery(), jsonLogger())
 
 	userRepo := persistence.NewUserRepository(gormDB)
