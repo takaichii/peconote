@@ -8,6 +8,7 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
+import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 
 interface Props {
   children: ReactNode;
@@ -17,6 +18,7 @@ function Layout({ children }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
   const isListPage = location.pathname === '/memos';
+  const isGroupsPage = location.pathname === '/groups';
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -44,6 +46,14 @@ function Layout({ children }: Props) {
             >
               📝 PecoNote
             </Typography>
+            <Button
+              size="small"
+              startIcon={<FolderOutlinedIcon />}
+              onClick={() => navigate('/groups')}
+              sx={{ mr: 1, color: isGroupsPage ? 'primary.main' : 'text.secondary' }}
+            >
+              Groups
+            </Button>
             {isListPage && (
               <Button
                 variant="contained"
@@ -51,6 +61,15 @@ function Layout({ children }: Props) {
                 onClick={() => navigate('/memos/new')}
               >
                 + New Memo
+              </Button>
+            )}
+            {isGroupsPage && (
+              <Button
+                variant="contained"
+                size="small"
+                onClick={() => navigate('/groups/new')}
+              >
+                + New Group
               </Button>
             )}
           </Toolbar>
