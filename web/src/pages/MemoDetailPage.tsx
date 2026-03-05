@@ -21,7 +21,9 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import { useGetMemo, useDeleteMemo } from '../hooks/useMemos';
+import { useListGroups } from '../hooks/useGroups';
 import { getTagColor } from '../utils/tagColor';
 
 function MemoDetailPage() {
@@ -30,6 +32,8 @@ function MemoDetailPage() {
   const { data, isLoading, isError } = useGetMemo(id);
   const deleteMemo = useDeleteMemo();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const { data: groupsData } = useListGroups();
+  const groups = groupsData?.items ?? [];
 
   if (isLoading) {
     return (
@@ -56,6 +60,8 @@ function MemoDetailPage() {
       </Box>
     );
   }
+
+  const memoGroup = groups.find((g) => g.id === data.group_id);
 
   return (
     <>
@@ -93,18 +99,26 @@ function MemoDetailPage() {
         </Typography>
       </Paper>
 
-      {data.tags.length > 0 && (
-        <Stack direction="row" spacing={0.5} flexWrap="wrap" mb={3}>
-          {data.tags.map((tag) => (
-            <Chip
-              key={tag}
-              label={tag}
-              size="small"
-              sx={{ ...getTagColor(tag), fontWeight: 500 }}
-            />
-          ))}
-        </Stack>
-      )}
+      <Stack direction="row" spacing={0.5} flexWrap="wrap" mb={3} alignItems="center">
+        {memoGroup && (
+          <Chip
+            icon={<FolderOutlinedIcon />}
+            label={memoGroup.name}
+            size="small"
+            variant="outlined"
+            onClick={() => navigate(`/memos?group_id=${memoGroup.id}`)}
+            sx={{ fontWeight: 500, cursor: 'pointer' }}
+          />
+        )}
+        {data.tags.map((tag) => (
+          <Chip
+            key={tag}
+            label={tag}
+            size="small"
+            sx={{ ...getTagColor(tag), fontWeight: 500 }}
+          />
+        ))}
+      </Stack>
 
       <Divider sx={{ mb: 2 }} />
       <Stack direction="row" spacing={3}>

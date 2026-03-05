@@ -18,10 +18,10 @@ var ErrInvalidMemoQuery = errors.New("invalid memo query")
 var ErrMemoNotFound = errors.New("memo not found")
 
 type MemoUsecase interface {
-	CreateMemo(ctx context.Context, body string, tags []string) (uuid.UUID, error)
-	ListMemos(ctx context.Context, page, pageSize int, tag *string) ([]*domain.Memo, *model.Pagination, error)
+	CreateMemo(ctx context.Context, body string, tags []string, groupID *uuid.UUID) (uuid.UUID, error)
+	ListMemos(ctx context.Context, page, pageSize int, tag *string, groupID *uuid.UUID) ([]*domain.Memo, *model.Pagination, error)
 	GetMemo(ctx context.Context, id uuid.UUID) (*domain.Memo, error)
-	UpdateMemo(ctx context.Context, id uuid.UUID, body string, tags []string) error
+	UpdateMemo(ctx context.Context, id uuid.UUID, body string, tags []string, groupID *uuid.UUID) error
 	DeleteMemo(ctx context.Context, id uuid.UUID) error
 }
 
@@ -33,7 +33,7 @@ func NewMemoUsecase(r repository.MemoRepository) MemoUsecase {
 	return &memoUsecase{repo: r}
 }
 
-func (u *memoUsecase) CreateMemo(ctx context.Context, body string, tags []string) (uuid.UUID, error) {
+func (u *memoUsecase) CreateMemo(ctx context.Context, body string, tags []string, groupID *uuid.UUID) (uuid.UUID, error) {
 	if strings.TrimSpace(body) == "" || len(body) > 2000 {
 		return uuid.Nil, ErrInvalidMemo
 	}
@@ -51,6 +51,7 @@ func (u *memoUsecase) CreateMemo(ctx context.Context, body string, tags []string
 		ID:        id,
 		Body:      body,
 		Tags:      tags,
+		GroupID:   groupID,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -60,7 +61,7 @@ func (u *memoUsecase) CreateMemo(ctx context.Context, body string, tags []string
 	return id, nil
 }
 
-func (u *memoUsecase) ListMemos(ctx context.Context, page, pageSize int, tag *string) ([]*domain.Memo, *model.Pagination, error) {
+func (u *memoUsecase) ListMemos(ctx context.Context, page, pageSize int, tag *string, groupID *uuid.UUID) ([]*domain.Memo, *model.Pagination, error) {
 	if pageSize < 1 || pageSize > 100 {
 		return nil, nil, ErrInvalidMemoQuery
 	}
@@ -72,7 +73,7 @@ func (u *memoUsecase) ListMemos(ctx context.Context, page, pageSize int, tag *st
 		*tag = t
 	}
 	offset := (page - 1) * pageSize
-	items, total, err := u.repo.List(ctx, tag, pageSize, offset)
+	items, total, err := u.repo.List(ctx, tag, groupID, pageSize, offset)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -100,7 +101,7 @@ func (u *memoUsecase) GetMemo(ctx context.Context, id uuid.UUID) (*domain.Memo, 
 	return memo, nil
 }
 
-func (u *memoUsecase) UpdateMemo(ctx context.Context, id uuid.UUID, body string, tags []string) error {
+func (u *memoUsecase) UpdateMemo(ctx context.Context, id uuid.UUID, body string, tags []string, groupID *uuid.UUID) error {
 	if strings.TrimSpace(body) == "" || len(body) > 2000 {
 		return ErrInvalidMemo
 	}
@@ -116,6 +117,7 @@ func (u *memoUsecase) UpdateMemo(ctx context.Context, id uuid.UUID, body string,
 		ID:        id,
 		Body:      body,
 		Tags:      tags,
+		GroupID:   groupID,
 		UpdatedAt: time.Now().UTC(),
 	}
 	if err := u.repo.Update(ctx, memo); err != nil {

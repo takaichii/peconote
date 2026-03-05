@@ -6,9 +6,13 @@ import {
   Button,
   Chip,
   CircularProgress,
+  FormControl,
   IconButton,
   InputAdornment,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
   Skeleton,
   Stack,
   TextField,
@@ -18,6 +22,7 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
 import { useCreateMemo, useUpdateMemo, useGetMemo } from '../hooks/useMemos';
+import { useListGroups } from '../hooks/useGroups';
 import { getTagColor } from '../utils/tagColor';
 
 interface Props {
@@ -33,10 +38,13 @@ function MemoFormPage({ mode }: Props) {
   const navigate = useNavigate();
 
   const { data: existing, isLoading } = useGetMemo(mode === 'edit' ? id : undefined);
+  const { data: groupsData } = useListGroups();
+  const groups = groupsData?.items ?? [];
 
   const [body, setBody] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [groupId, setGroupId] = useState<string>('');
   const [bodyError, setBodyError] = useState('');
   const [tagError, setTagError] = useState('');
 
@@ -44,6 +52,7 @@ function MemoFormPage({ mode }: Props) {
     if (existing) {
       setBody(existing.body);
       setTags(existing.tags);
+      setGroupId(existing.group_id ?? '');
     }
   }, [existing]);
 
@@ -94,7 +103,7 @@ function MemoFormPage({ mode }: Props) {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    mutation.mutate({ body, tags });
+    mutation.mutate({ body, tags, group_id: groupId || null });
   };
 
   if (mode === 'edit' && isLoading) {
@@ -143,6 +152,22 @@ function MemoFormPage({ mode }: Props) {
             }
             sx={{ mb: 3 }}
           />
+
+          <FormControl fullWidth size="small" sx={{ mb: 3 }}>
+            <InputLabel>Group (optional)</InputLabel>
+            <Select
+              label="Group (optional)"
+              value={groupId}
+              onChange={(e) => setGroupId(e.target.value)}
+            >
+              <MenuItem value="">No group</MenuItem>
+              {groups.map((g) => (
+                <MenuItem key={g.id} value={g.id}>
+                  {g.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
           <Typography variant="subtitle2" color="text.secondary" mb={1}>
             Tags

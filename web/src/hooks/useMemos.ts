@@ -6,6 +6,7 @@ export interface Memo {
   id: string;
   body: string;
   tags: string[];
+  group_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +27,7 @@ export interface ListParams {
   page?: number;
   page_size?: number;
   tag?: string;
+  group_id?: string;
 }
 
 export function useListMemos(params: ListParams) {
@@ -53,7 +55,7 @@ export function useCreateMemo() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   return useMutation({
-    mutationFn: async (memo: { body: string; tags: string[] }) => {
+    mutationFn: async (memo: { body: string; tags: string[]; group_id?: string | null }) => {
       const { data } = await client.post('/memos', memo);
       return data as { id: string };
     },
@@ -68,7 +70,7 @@ export function useUpdateMemo(id: string) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   return useMutation({
-    mutationFn: async (memo: { body: string; tags: string[] }) => {
+    mutationFn: async (memo: { body: string; tags: string[]; group_id?: string | null }) => {
       await client.put(`/memos/${id}`, memo);
     },
     onSuccess: () => {

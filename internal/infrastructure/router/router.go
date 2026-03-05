@@ -30,6 +30,16 @@ func NewRouter(gormDB *gorm.DB, sqlxDB *sqlx.DB) *gin.Engine {
 	r.GET("/users", userController.GetUsers)
 	r.POST("/users", userController.CreateUser)
 
+	groupRepo := adapterrepo.NewGroupRepository(sqlxDB)
+	groupUsecase := usecase.NewGroupUsecase(groupRepo)
+	groupHandler := adapterhandler.NewGroupHandler(groupUsecase)
+
+	r.POST("/api/groups", groupHandler.CreateGroup)
+	r.GET("/api/groups", groupHandler.ListGroups)
+	r.GET("/api/groups/:id", groupHandler.GetGroup)
+	r.PUT("/api/groups/:id", groupHandler.UpdateGroup)
+	r.DELETE("/api/groups/:id", groupHandler.DeleteGroup)
+
 	memoRepo := adapterrepo.NewMemoRepository(sqlxDB)
 	memoUsecase := usecase.NewMemoUsecase(memoRepo)
 	memoHandler := adapterhandler.NewMemoHandler(memoUsecase)
@@ -60,6 +70,9 @@ func jsonLogger() gin.HandlerFunc {
 		}
 		if v := q.Get("tag"); v != "" {
 			m["tag"] = v
+		}
+		if v := q.Get("group_id"); v != "" {
+			m["group_id"] = v
 		}
 		if v := param.Request.Context().Value("trace_id"); v != nil {
 			if s, ok := v.(string); ok {

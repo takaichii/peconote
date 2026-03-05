@@ -6,11 +6,9 @@ import (
 	"github.com/google/uuid"
 )
 
-type Memo struct {
+type Group struct {
 	ID        uuid.UUID
-	Body      string
-	Tags      []string
-	GroupID   *uuid.UUID
+	Name      string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

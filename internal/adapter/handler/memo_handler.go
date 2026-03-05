@@ -26,7 +26,17 @@ func (h *MemoHandler) CreateMemo(c *gin.Context) {
 		return
 	}
 
-	id, err := h.usecase.CreateMemo(c.Request.Context(), req.Body, req.Tags)
+	var groupID *uuid.UUID
+	if req.GroupID != nil {
+		parsed, err := uuid.Parse(*req.GroupID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid group_id"})
+			return
+		}
+		groupID = &parsed
+	}
+
+	id, err := h.usecase.CreateMemo(c.Request.Context(), req.Body, req.Tags, groupID)
 	if err != nil {
 		if errors.Is(err, usecase.ErrInvalidMemo) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -60,8 +70,17 @@ func (h *MemoHandler) ListMemos(c *gin.Context) {
 		}
 		tagPtr = &tag
 	}
+	var groupIDPtr *uuid.UUID
+	if groupIDStr, ok := c.GetQuery("group_id"); ok {
+		parsed, err := uuid.Parse(groupIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid group_id"})
+			return
+		}
+		groupIDPtr = &parsed
+	}
 
-	items, pagination, err := h.usecase.ListMemos(c.Request.Context(), page, pageSize, tagPtr)
+	items, pagination, err := h.usecase.ListMemos(c.Request.Context(), page, pageSize, tagPtr, groupIDPtr)
 	if err != nil {
 		if errors.Is(err, usecase.ErrInvalidMemoQuery) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -73,13 +92,18 @@ func (h *MemoHandler) ListMemos(c *gin.Context) {
 
 	resItems := make([]MemoItem, len(items))
 	for i, m := range items {
-		resItems[i] = MemoItem{
+		item := MemoItem{
 			ID:        m.ID.String(),
 			Body:      m.Body,
 			Tags:      m.Tags,
 			CreatedAt: m.CreatedAt,
 			UpdatedAt: m.UpdatedAt,
 		}
+		if m.GroupID != nil {
+			s := m.GroupID.String()
+			item.GroupID = &s
+		}
+		resItems[i] = item
 	}
 	resp := MemoListResponse{Items: resItems, Pagination: *pagination}
 	if link := util.BuildLinkHeader("/api/memos", resp.Pagination, tagPtr); link != "" {
@@ -104,13 +128,18 @@ func (h *MemoHandler) GetMemo(c *gin.Context) {
 		}
 		return
 	}
-	c.JSON(http.StatusOK, MemoItem{
+	item := MemoItem{
 		ID:        memo.ID.String(),
 		Body:      memo.Body,
 		Tags:      memo.Tags,
 		CreatedAt: memo.CreatedAt,
 		UpdatedAt: memo.UpdatedAt,
-	})
+	}
+	if memo.GroupID != nil {
+		s := memo.GroupID.String()
+		item.GroupID = &s
+	}
+	c.JSON(http.StatusOK, item)
 }
 
 func (h *MemoHandler) UpdateMemo(c *gin.Context) {
@@ -124,7 +153,18 @@ func (h *MemoHandler) UpdateMemo(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := h.usecase.UpdateMemo(c.Request.Context(), id, req.Body, req.Tags); err != nil {
+
+	var groupID *uuid.UUID
+	if req.GroupID != nil {
+		parsed, err := uuid.Parse(*req.GroupID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid group_id"})
+			return
+		}
+		groupID = &parsed
+	}
+
+	if err := h.usecase.UpdateMemo(c.Request.Context(), id, req.Body, req.Tags, groupID); err != nil {
 		switch {
 		case errors.Is(err, usecase.ErrInvalidMemo):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
